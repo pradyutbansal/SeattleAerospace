@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Seattle Aerospace Industry</title>
+  <h1>Seattle Aerospace Industry</h1>
+</head>
+<body>
+
+</svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script type="text/javascript">
+var nodes;
+var edges;
+var height = 1200, width = 1400;
+d3.csv('new_nodes.csv', (data) => {
+  nodes = data;
+  groupNodes = [[],[],[],[],[],[],[],[],[],[],[]];
+  nodes.map((node) => {
+    groupNodes[node.group2-1].push(node);
+  })
+
+  groupNodes.map((group) => {
+    group.sort((a,b) => +a.activity.substring(0,3) - +b.activity.substring(0,3))
+  })
+
+  d3.csv('colors.csv', (data) => {
+    var colors = {};
+    data.forEach(col =>{
+      colors[col.activity] = col.color;
+    })
+    // console.log(nodes)
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", width-200)
+                .attr("height", height);
+
+    var y = d3.scaleLinear()
+              .domain([0,12])
+              .range([0,1100])
+
+    var yAxis = d3.axisRight()
+                  .scale(y)
+                  .ticks(12)
+                  .tickArguments([0,12])
+
+    var cont = false;
+
+
+    function handleMouseOver(d, i) {  // Add interactivity
+            console.log(d3.select(this))
+            // Use D3 to select element, change color and size
+            d3.select(this)
+            .style("fill-opacity",.6)
+
+            // Specify where to put label of text
+            svg.append("text")
+            .text(function(d) {
+              return d.label;  // Value of the text
+            })
+            .attr({
+               id: "t" + d.x + "-" + d.y + "-" + i,  // Create an id for text so we can select it later for removing on mouseout
+                x: function() { return d.x; },
+                y: function() { return d.y; }
+            })
+          }
+
+
+    d3.select("svg").selectAll("circle")
+                    .data(nodes)
+                    .enter()
+                    .append("circle")
+                    .attr("cy", d => {
+                        d.y = d.group2 * 100 + 20;
+                        // console.log(d.x)
+                       return d.group2 * 100 + 20;})
+                    .attr("cx", d => {
+                      var x1Scale = d3.scaleLinear()
+                                      .domain([0,groupNodes[d.group2-1].length+1])
+                                      .range([80,width-280])
+                        d.x = x1Scale(groupNodes[d.group2-1].indexOf(d) + 1);
+                        return d.x;
+                      })
+                    .attr("r", (d) => { return + d.degree + 5})
+                    .attr("fill", d => {return colors[d.activity.substring(0,3)]})
+                    .attr("id", d => (d.id))
+                    .append("g")
+                    .attr("transform", "translate(100,100)")
+    svg.append("g")
+        .attr("class", "x axis")
+        .call(yAxis)
+    d3.csv("edges.csv", data => {
+      var lineGenerator = d3.line()
+	                          .curve(d3.curveCardinal);
+
+      d3.select("svg"). selectAll("path")
+                      .data(data)
+                      .enter()
+                      .append("path")
+                      .attr("d", d =>{
+                        var from = document.getElementById(d.Source);
+                        var to = document.getElementById(d.Target);
+                        // console.log([[to.attributes["cx"].value,from.attributes["cy"].value]])
+                        return lineGenerator([[from.attributes["cx"].value,from.attributes["cy"].value],[to.attributes["cx"].value,to.attributes["cy"].value]])
+                      })
+                      .attr("stroke-width", 1)
+                      .attr("class",(d) => {return "edge_" + d.Label})
+      d3.select("svg").selectAll("circle")
+
+
+      d3.select("svg").selectAll("path")
+                      .attr("stroke", d => (document.getElementById(d.Source).attributes["fill"].value));
+
+
+      d3.select("svg").selectAll("text")
+        .data(nodes)
+        .enter()
+        .append("text")
+        .text((d)=>{if(d.degree > 4){
+
+          return d.label.substring(0,20)
+        }})
+        .attr("x", (d) => (+document.getElementById(d.id).attributes["cx"].value))
+        .attr("y", (d) => {
+          var x = +document.getElementById(d.id).attributes["cy"].value
+          var r = +document.getElementById(d.id).attributes["r"].value
+          cont = !cont;
+          return cont ? x +r+10 : x-r-10
+          // return x+r;
+        })
+
+
+    })
+
+    })
+
+  })
+  </script>
+  <style>
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+body{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center
+}
+</style>
+</body>
+</html>
