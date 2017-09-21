@@ -13,4 +13,7 @@ I would like to add some more functionality to this, namely:
 
 - make the axes clear
 - click on an edge to highlight its connections
--hover on a node to get more information about it.
+- hover on a node to get more information about it.
+
+
+I was able to figure out what activity was, but still have no idea what the edge label and node object represented.
